@@ -23,7 +23,7 @@
 --- XOR are codec-internal; they could be extracted into a shared
 --- byte-codec package later if another format needs them.
 
-from "../ws_frame" import { Encode, Decode }
+from "ws_frame" import { Encode, Decode }
 from "bytes" import * as bytes
 from "math" import * as math
 from "option" import * as option

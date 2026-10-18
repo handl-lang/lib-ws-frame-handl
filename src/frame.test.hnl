@@ -7,7 +7,7 @@
 --- here through the contract's own projection/prefix helpers).
 
 from "./frame" import * as frame
-from "../ws_frame" import * as ws_frame
+from "ws_frame" import * as ws_frame
 from "bytes" import * as bytes
 
 -- -------------------------------------------------------------------

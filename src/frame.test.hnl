@@ -10,6 +10,12 @@ from "./frame" import * as frame
 from "ws_frame" import * as ws_frame
 from "bytes" import * as bytes
 
+-- opt_tag -- the `tag.tag_of` replacement for `__ctor__` decode results
+-- (phase-3 WS-F: `option.some`/`option.none` mint `{"__ctor__": …}`
+-- objects; dispatch is ctor-sym identity via `match`, not a `__tag__`
+-- string).
+opt_tag :: d ~> match d { Some(_): "Some", _: "None" }
+
 -- -------------------------------------------------------------------
 -- RFC 6455 §5.7 vectors: a single-frame unmasked "Hello" text message
 -- is 0x81 0x05 + payload; masked with key 0x37fa213d it is
@@ -18,7 +24,7 @@ from "bytes" import * as bytes
 
 test_decode_unmasked_hello := assert(do {
   d :: frame.decode(bytes.from_list([129, 5, 72, 101, 108, 108, 111]))
-  { tag: tag.tag_of(d),
+  { tag: opt_tag(d),
     fin: d.value.frame.fin,
     op: d.value.frame.op,
     payload: bytes.utf8_decode(d.value.frame.payload),
@@ -27,7 +33,7 @@ test_decode_unmasked_hello := assert(do {
 
 test_decode_masked_hello := assert(do {
   d :: frame.decode(bytes.from_list([129, 133, 55, 250, 33, 61, 127, 159, 77, 81, 88]))
-  { tag: tag.tag_of(d),
+  { tag: opt_tag(d),
     fin: d.value.frame.fin,
     op: d.value.frame.op,
     payload: bytes.utf8_decode(d.value.frame.payload),
@@ -100,7 +106,7 @@ test_encode_empty_payload := assert bytes.to_list(frame.encode({
 
 test_decode_empty_payload := assert(do {
   d :: frame.decode(bytes.from_list([130, 0]))
-  { tag: tag.tag_of(d),
+  { tag: opt_tag(d),
     len: bytes.len(d.value.frame.payload),
     rest: bytes.len(d.value.rest) }
 }) = { tag: "Some", len: 0, rest: 0 }
@@ -182,25 +188,25 @@ test_len_65536_u64 := assert(do {
 -- need_more: every strict truncation of a frame must come back `None`.
 -- -------------------------------------------------------------------
 
-test_need_more_empty := assert tag.tag_of(frame.decode(bytes.from_list([]))) = "None"
+test_need_more_empty := assert opt_tag(frame.decode(bytes.from_list([]))) = "None"
 
-test_need_more_header := assert tag.tag_of(frame.decode(bytes.from_list([129]))) = "None"
+test_need_more_header := assert opt_tag(frame.decode(bytes.from_list([129]))) = "None"
 
 test_need_more_u16_ext := assert(do {
-  a :: tag.tag_of(frame.decode(bytes.from_list([130, 126])))
-  b :: tag.tag_of(frame.decode(bytes.from_list([130, 126, 0])))
+  a :: opt_tag(frame.decode(bytes.from_list([130, 126])))
+  b :: opt_tag(frame.decode(bytes.from_list([130, 126, 0])))
   a + "/" + b
 }) = "None/None"
 
-test_need_more_u64_ext := assert tag.tag_of(frame.decode(bytes.from_list([130, 127, 0, 0, 0, 0, 0, 1, 0]))) = "None"
+test_need_more_u64_ext := assert opt_tag(frame.decode(bytes.from_list([130, 127, 0, 0, 0, 0, 0, 1, 0]))) = "None"
 
 test_need_more_mask_key := assert(do {
-  a :: tag.tag_of(frame.decode(bytes.from_list([129, 133, 55])))
-  b :: tag.tag_of(frame.decode(bytes.from_list([129, 133, 55, 250, 33])))
+  a :: opt_tag(frame.decode(bytes.from_list([129, 133, 55])))
+  b :: opt_tag(frame.decode(bytes.from_list([129, 133, 55, 250, 33])))
   a + "/" + b
 }) = "None/None"
 
-test_need_more_payload := assert tag.tag_of(frame.decode(bytes.from_list([129, 5, 72, 101, 108, 108]))) = "None"
+test_need_more_payload := assert opt_tag(frame.decode(bytes.from_list([129, 5, 72, 101, 108, 108]))) = "None"
 
 -- -------------------------------------------------------------------
 -- rest: coalesced frames decode one at a time.
@@ -263,8 +269,8 @@ test_law_prefix := assert ws_frame.all_need_more(
 -- instantiated with this impl's arrows (the properties they state are
 -- asserted concretely above).
 test_laws_instantiate := assert(do {
-  r :: tag.tag_of(ws_frame.roundtrip(frame.encode, frame.decode))
-  c :: tag.tag_of(ws_frame.complete(frame.encode, frame.decode))
-  p :: tag.tag_of(ws_frame.prefix(frame.encode, frame.decode))
+  r :: opt_tag(ws_frame.roundtrip(frame.encode, frame.decode))
+  c :: opt_tag(ws_frame.complete(frame.encode, frame.decode))
+  p :: opt_tag(ws_frame.prefix(frame.encode, frame.decode))
   r + "/" + c + "/" + p
 }) = "Arrow/Arrow/Arrow"

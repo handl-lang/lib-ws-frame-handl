@@ -2,14 +2,13 @@
 
 Pure-handl RFC 6455 frame codec — `encode`/`decode` for the `ws_frame` contract.
 
-Part of the `handl-lang` org split (ADR-0128). History is a `git subtree
-split` of the platform monorepo's `ws_frame-handl/` (via `web`).
-
 ## Layout
 
 ```text
 src/        the .hnl sources
-pkg.hnl     dependencies, when any: `{ deps: { <name>: "branch:<ref>" } }`
+pkg.hnl     package manifest — modules, deps, description, license
+scripts/hnl-gate.sh   the gate
+ci.sh       bupha entry
 ```
 
 ## Gate

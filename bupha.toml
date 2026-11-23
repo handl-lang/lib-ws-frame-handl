@@ -6,7 +6,7 @@
 
 [[repos]]
 name = "handl-lang/lib-ws-frame-handl"
-dir = "/home/luis/GitHub/handl-lang/lib-ws-frame-handl"
+dir = "~//GitHub/handl-lang/lib-ws-frame-handl"
 branch = "refs/heads/main"
   [repos.runner]
   kind = "script"

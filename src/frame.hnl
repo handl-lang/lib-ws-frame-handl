@@ -63,9 +63,9 @@ be_read := (buf, off, count) ~> while { i: 0, acc: 0 } {
 --- than `math.mod`, so the key may be any positive length -- the
 --- contract only ever promises 4.
 xor_mask := (payload, key) ~> do {
-  ks :: bytes.to_list(key)
-  klen :: bytes.len(key)
-  masked :: while { i: 0, j: 0, acc: [] } {
+  ks := bytes.to_list(key)
+  klen := bytes.len(key)
+  masked := while { i: 0, j: 0, acc: [] } {
     [i, j, acc] ~> if i >= bytes.len(payload) {
       { out: acc }
     } else {
@@ -81,20 +81,20 @@ xor_mask := (payload, key) ~> do {
 --- `mask_key` empty emits an unmasked frame; 4 bytes emits a masked one
 --- with the payload XORed against the key (RFC 6455 §5.1, §5.3).
 export encode: Encode := (input) ~> do {
-  plen :: bytes.len(input.payload)
-  masked :: bytes.len(input.mask_key) > 0
-  b0 :: math.bit_or((if input.fin != 0 { 128 } else { 0 }),
+  plen := bytes.len(input.payload)
+  masked := bytes.len(input.mask_key) > 0
+  b0 := math.bit_or((if input.fin != 0 { 128 } else { 0 }),
                     math.bit_and(input.op, 15))
-  len_tag :: if plen <= 125 { plen } else if plen <= 65535 { 126 } else { 127 }
-  b1 :: math.bit_or((if masked { 128 } else { 0 }), len_tag)
-  header :: if plen <= 125 {
+  len_tag := if plen <= 125 { plen } else if plen <= 65535 { 126 } else { 127 }
+  b1 := math.bit_or((if masked { 128 } else { 0 }), len_tag)
+  header := if plen <= 125 {
     [b0, b1]
   } else if plen <= 65535 {
     [b0, b1, ...u16_be(plen)]
   } else {
     [b0, b1, ...u64_be(plen)]
   }
-  body :: if masked {
+  body := if masked {
     [...bytes.to_list(input.mask_key),
      ...bytes.to_list(xor_mask(input.payload, input.mask_key))]
   } else {
@@ -109,29 +109,29 @@ export encode: Encode := (input) ~> do {
 --- payload alike -- and `option.some` with `{frame, rest}` once the
 --- whole frame is present, where `rest` is whatever trails it.
 export decode: Decode := (buf) ~> do {
-  n :: bytes.len(buf)
+  n := bytes.len(buf)
   if n < 2 {
     option.none()
   } else {
     do {
-      b0 :: bytes.at(buf, 0)
-      b1 :: bytes.at(buf, 1)
-      tag7 :: math.bit_and(b1, 127)
-      ext :: if tag7 == 126 { 2 } else if tag7 == 127 { 8 } else { 0 }
+      b0 := bytes.at(buf, 0)
+      b1 := bytes.at(buf, 1)
+      tag7 := math.bit_and(b1, 127)
+      ext := if tag7 == 126 { 2 } else if tag7 == 127 { 8 } else { 0 }
       if n < 2 + ext {
         option.none()
       } else {
         do {
-          plen :: if ext == 0 { tag7 } else { be_read(buf, 2, ext) }
-          masked :: math.bit_and(b1, 128) == 128
-          key_len :: if masked { 4 } else { 0 }
-          head :: 2 + ext + key_len
+          plen := if ext == 0 { tag7 } else { be_read(buf, 2, ext) }
+          masked := math.bit_and(b1, 128) == 128
+          key_len := if masked { 4 } else { 0 }
+          head := 2 + ext + key_len
           if n < head + plen {
             option.none()
           } else {
             do {
-              raw :: bytes.slice(buf, head, plen)
-              payload :: if masked {
+              raw := bytes.slice(buf, head, plen)
+              payload := if masked {
                 xor_mask(raw, bytes.slice(buf, 2 + ext, 4))
               } else {
                 raw

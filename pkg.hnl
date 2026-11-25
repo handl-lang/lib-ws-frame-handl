@@ -1,3 +1,3 @@
 -- lib-ws-frame-handl: modules this package provides (entry defaults to
 -- src/index.hnl; N modules resolve to src/<name>/index.hnl).
-{ modules: ["frame"], deps: { ws_frame: "branch:main", math: "branch:main", option: "branch:main" }, description: "Pure-handl RFC 6455 frame codec.", license: "MIT" }
+{ modules: ["frame"], name: "ws-frame-handl", deps: { ws_frame: "branch:main", math: "branch:main", option: "branch:main" }, description: "Pure-handl RFC 6455 frame codec.", license: "MIT" }

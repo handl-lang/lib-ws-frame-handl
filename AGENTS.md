@@ -1,3 +1,32 @@
+# lib-ws-frame-handl
+
+Pure-handl RFC 6455 frame codec — `encode`/`decode` for the
+`ws_frame` contract (`lib-ws-frame`).
+
+## Layout
+
+| path | role |
+| --- | --- |
+| `src/frame.hnl` | the codec implementation |
+| `src/frame.test.hnl` | the .hnl test suite |
+| `pkg.hnl` | manifest — `modules: ["frame"]`, deps `ws_frame`, `math`, `option` |
+| `scripts/hnl-gate.sh`, `ci.sh` | the gate / bupha entry |
+
+## Contract
+
+- Pure-handl reference implementation of the `ws_frame` contract —
+  RFC 6455 frame encode/decode.
+
+## Verification
+
+```bash
+HNL=../host-cli/target/debug/hnl scripts/hnl-gate.sh
+```
+
+## License
+
+MIT.
+
 <!-- myco:agent-awareness -->
 
 ## Agent awareness

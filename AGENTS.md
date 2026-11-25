@@ -10,7 +10,7 @@ Pure-handl RFC 6455 frame codec — `encode`/`decode` for the
 | `src/frame.hnl` | the codec implementation |
 | `src/frame.test.hnl` | the .hnl test suite |
 | `pkg.hnl` | manifest — `modules: ["frame"]`, deps `ws_frame`, `math`, `option` |
-| `scripts/hnl-gate.sh`, `ci.sh` | the gate / bupha entry |
+| `scripts/hnl-gate.sh`, `workflows/gate.yaml` | the gate / bupha entry |
 
 ## Contract
 

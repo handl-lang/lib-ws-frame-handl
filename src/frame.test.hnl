@@ -14,7 +14,7 @@ from "bytes" import * as bytes
 -- (phase-3 WS-F: `option.some`/`option.none` mint `{"__ctor__": …}`
 -- objects; dispatch is ctor-sym identity via `match`, not a `__tag__`
 -- string).
-opt_tag := d ~> match d { Some(_): "Some", _: "None" }
+opt_tag := d ~> match d { some(_): "some", _: "none" }
 
 -- -------------------------------------------------------------------
 -- RFC 6455 §5.7 vectors: a single-frame unmasked "Hello" text message
@@ -29,7 +29,7 @@ test_decode_unmasked_hello := assert(do {
     op: d.value.frame.op,
     payload: bytes.utf8_decode(d.value.frame.payload),
     rest: bytes.len(d.value.rest) }
-}) == { tag: "Some", fin: 1, op: 1, payload: "Hello", rest: 0 }
+}) == { tag: "some", fin: 1, op: 1, payload: "Hello", rest: 0 }
 
 test_decode_masked_hello := assert(do {
   d := frame.decode(bytes.from_list([129, 133, 55, 250, 33, 61, 127, 159, 77, 81, 88]))
@@ -38,7 +38,7 @@ test_decode_masked_hello := assert(do {
     op: d.value.frame.op,
     payload: bytes.utf8_decode(d.value.frame.payload),
     rest: bytes.len(d.value.rest) }
-}) == { tag: "Some", fin: 1, op: 1, payload: "Hello", rest: 0 }
+}) == { tag: "some", fin: 1, op: 1, payload: "Hello", rest: 0 }
 
 test_encode_unmasked_hello := assert bytes.to_list(frame.encode({
   fin: 1, op: ws_frame.OpText,
@@ -109,7 +109,7 @@ test_decode_empty_payload := assert(do {
   { tag: opt_tag(d),
     len: bytes.len(d.value.frame.payload),
     rest: bytes.len(d.value.rest) }
-}) == { tag: "Some", len: 0, rest: 0 }
+}) == { tag: "some", len: 0, rest: 0 }
 
 -- 125 is the largest inline length: byte1 is the length itself and no
 -- extended-length bytes follow.
@@ -185,28 +185,28 @@ test_len_65536_u64 := assert(do {
 }) == { head: [130, 127, 0, 0, 0, 0, 0, 1, 0, 0], decoded: 65536, rest: 0 }
 
 -- -------------------------------------------------------------------
--- need_more: every strict truncation of a frame must come back `None`.
+-- need_more: every strict truncation of a frame must come back `none`.
 -- -------------------------------------------------------------------
 
-test_need_more_empty := assert opt_tag(frame.decode(bytes.from_list([]))) == "None"
+test_need_more_empty := assert opt_tag(frame.decode(bytes.from_list([]))) == "none"
 
-test_need_more_header := assert opt_tag(frame.decode(bytes.from_list([129]))) == "None"
+test_need_more_header := assert opt_tag(frame.decode(bytes.from_list([129]))) == "none"
 
 test_need_more_u16_ext := assert(do {
   a := opt_tag(frame.decode(bytes.from_list([130, 126])))
   b := opt_tag(frame.decode(bytes.from_list([130, 126, 0])))
   a + "/" + b
-}) == "None/None"
+}) == "none/none"
 
-test_need_more_u64_ext := assert opt_tag(frame.decode(bytes.from_list([130, 127, 0, 0, 0, 0, 0, 1, 0]))) == "None"
+test_need_more_u64_ext := assert opt_tag(frame.decode(bytes.from_list([130, 127, 0, 0, 0, 0, 0, 1, 0]))) == "none"
 
 test_need_more_mask_key := assert(do {
   a := opt_tag(frame.decode(bytes.from_list([129, 133, 55])))
   b := opt_tag(frame.decode(bytes.from_list([129, 133, 55, 250, 33])))
   a + "/" + b
-}) == "None/None"
+}) == "none/none"
 
-test_need_more_payload := assert opt_tag(frame.decode(bytes.from_list([129, 5, 72, 101, 108, 108]))) == "None"
+test_need_more_payload := assert opt_tag(frame.decode(bytes.from_list([129, 5, 72, 101, 108, 108]))) == "none"
 
 -- -------------------------------------------------------------------
 -- rest: coalesced frames decode one at a time.
@@ -254,7 +254,7 @@ test_law_complete := assert ws_frame.rest_of(frame.decode(frame.encode({
   mask_key: bytes.from_list([])
 }))) == ws_frame.empty(null)
 
--- `prefix`: every strict prefix of an encoded frame decodes to `None`
+-- `prefix`: every strict prefix of an encoded frame decodes to `none`
 -- (checked on a masked frame so the truncation spans header, mask key,
 -- and payload bytes alike).
 test_law_prefix := assert ws_frame.all_need_more(

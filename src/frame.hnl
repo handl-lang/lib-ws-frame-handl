@@ -23,10 +23,12 @@
 --- XOR are codec-internal; they could be extracted into a shared
 --- byte-codec package later if another format needs them.
 
-from "ws_frame" import { Encode, Decode }
+from "ws_frame" import { DecodeOut, EncodeIn }
 from "bytes" import * as bytes
+from "bytes" import { Bytes }
 from "math" import * as math
 from "option" import * as option
+from "option" import { Option }
 
 --- u16_be -- the 2-byte big-endian encoding of `n` (0 <= n <= 65535) as
 --- a list of byte ints.
@@ -80,13 +82,15 @@ xor_mask := (payload, key) ~> do {
 --- encode -- serialize `{fin, op, payload, mask_key}` to wire bytes.
 --- `mask_key` empty emits an unmasked frame; 4 bytes emits a masked one
 --- with the payload XORed against the key (RFC 6455 §5.1, §5.3).
-export encode: Encode := (input) ~> do {
-  plen := bytes.len(input.payload)
-  masked := bytes.len(input.mask_key) > 0
-  b0 := math.bit_or((if input.fin != 0 { 128 } else { 0 }),
-                    math.bit_and(input.op, 15))
+export encode: (EncodeIn) ~> Bytes := (input) ~> do {
+  inp := (input : EncodeIn)
+  plen := bytes.len(inp.payload)
+  masked := bytes.len(inp.mask_key) > 0
+  fin_bit := if inp.fin != 0 { 128 } else { 0 }
+  mask_bit := if masked { 128 } else { 0 }
+  b0 := math.bit_or(fin_bit, math.bit_and(inp.op, 15))
   len_tag := if plen <= 125 { plen } else if plen <= 65535 { 126 } else { 127 }
-  b1 := math.bit_or((if masked { 128 } else { 0 }), len_tag)
+  b1 := math.bit_or(mask_bit, len_tag)
   header := if plen <= 125 {
     [b0, b1]
   } else if plen <= 65535 {
@@ -95,12 +99,11 @@ export encode: Encode := (input) ~> do {
     [b0, b1, ...u64_be(plen)]
   }
   body := if masked {
-    [...bytes.to_list(input.mask_key),
-     ...bytes.to_list(xor_mask(input.payload, input.mask_key))]
+    bytes.concat(inp.mask_key, xor_mask(inp.payload, inp.mask_key))
   } else {
-    bytes.to_list(input.payload)
+    inp.payload
   }
-  bytes.from_list([...header, ...body])
+  bytes.concat(bytes.from_list(header), body)
 }
 
 --- decode -- read one frame off the front of `buf`. Returns
@@ -108,7 +111,7 @@ export encode: Encode := (input) ~> do {
 --- the frame -- truncated header, extended length, mask key, or
 --- payload alike -- and `option.some` with `{frame, rest}` once the
 --- whole frame is present, where `rest` is whatever trails it.
-export decode: Decode := (buf) ~> do {
+export decode: (Bytes) ~> Option<DecodeOut> := (buf) ~> do {
   n := bytes.len(buf)
   if n < 2 {
     option.none()

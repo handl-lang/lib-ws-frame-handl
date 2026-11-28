@@ -1,6 +1,8 @@
 [dependencies]
-ws_frame = { path = "../lib-ws_frame/src" }
+ws_frame = { path = "../lib-ws-frame/src" }
 math = { path = "../lib-math/src" }
+math-handl = { path = "../lib-math-handl/src" }
+math-c = { path = "../lib-math-c/src" }
 option = { path = "../lib-option/src" }
 
 # own package
